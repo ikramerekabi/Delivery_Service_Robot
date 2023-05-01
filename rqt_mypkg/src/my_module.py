@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 import rospy
 import rospkg
@@ -43,10 +42,30 @@ class MyPlugin(Plugin):
             self._widget.setWindowTitle(self._widget.windowTitle() + (' (%d)' % context.serial_number()))
         # Add widget to the user interface
         context.add_widget(self._widget)
-      #  self._widget.button_3.clicked.connect() this is for connecting 
+        #self._widget.Move_Button.clicked.connect(self.function1) 
+        #self._widget.Stop_Button.clicked.connect(self.function2) 
+        self._widget.Order_button.clicked.connect(self.open_new_window)
+        #self._widget.Table1_button.clicked.connect(self.waiting_function)
+
+
+
+    def open_new_window(self):
+        self.new_window = loadUi(os.path.join(rospkg.RosPack().get_path('rqt_mypkg'), 'resource', 'Tables.ui'))
+        self.new_window.show()
+        self._widget.Table1_button.clicked.connect(self.waiting_function)
+
+
+    def waiting_function(self):
+        self.new_window = loadUi(os.path.join(rospkg.RosPack().get_path('rqt_mypkg'), 'resource', 'waiting.ui'))
+        self.new_window.show()
+
 
     def function1(self):
-        print('HI')
+        print('Robot is moving')
+        Intro_Text="change of plans" 
+
+    def function2(self):
+        print('Robot stopped moving')    
         
     def shutdown_plugin(self):
         # TODO unregister all publishers here
