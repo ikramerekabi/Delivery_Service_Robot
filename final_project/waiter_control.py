@@ -30,19 +30,34 @@ def waiter_control_node():
     rospy.spin()
 
 def chef_control(order):
-    #we will move the robot here
+    # to use the image detection
+    # then check the location and if it matches the table in the order, we make delivered = true 
+    Chef_Location = 1 #maybe we can have the location as coordinates in another msg file.
+    Table_Location = 2
+    Home_location = 3
     if order.placed == True:
-            #time.sleep(5)
+            #wait for some time for the light to turn green and then move the robot to the chef s location
+            move_robot(order, Chef_Location) 
+            #use the image detection 
+            # then once the light is green,we make the order ready = true
             order.ready =True
-            move_robot(order)
+            #then we move the robot to the location of the table in the order which should be related  
+            move_robot(order, Table_Location) 
+            #once it is there we make the order.delivered = True
+            order.delivered = True
+            #then once it is delivered, we should send it home
+            move_robot(order, Home_location)
+
+
+            
 
 
 
-def move_robot(order):
-     #we move the robot to the table in the order 
-     #time.sleep(5)
-     #go to the table in the order 
-     order.delivered = True
+def move_robot(order, location):
+    
+     #this moves the robot to the location given 
+     print("arrived to the location given")
+     
      
 if __name__ == '__main__':
     waiter_control_node()
