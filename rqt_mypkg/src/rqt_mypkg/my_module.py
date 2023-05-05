@@ -48,13 +48,6 @@ class MyPlugin(Plugin):
         context.add_widget(self._widget)
         self._widget.Burger_button.clicked.connect(self.burger_order) 
         self._widget.Pizza_button.clicked.connect(self.pizza_order) 
-        #self._widget.Stop_Button.clicked.connect(self.function2) 
-        #self._widget.Order_button.clicked.connect(self.open_new_window)
-        #self._widget.Table1_button.clicked.connect(self.waiting_function)
-
-
-
-    #def open_new_window(self):
         
 
 
@@ -84,15 +77,7 @@ class MyPlugin(Plugin):
         self.new_window.Table1_button.clicked.connect(publish_order)
         self.new_window.Table2_button.clicked.connect(publish_order)
         self.new_window.Table3_button.clicked.connect(publish_order)
-        #new_order.table_number=2
-        #new_order.table_number=3
-        #pub = rospy.Publisher('order_topic', Order, queue_size=10)
-        #pub.publish(new_order)
-        #print('A burger order is placed')
-        
-        
-
-
+       
             
 
     def pizza_order(self):
@@ -111,7 +96,7 @@ class MyPlugin(Plugin):
         def publish_order():
             pub = rospy.Publisher('order_topic', Order, queue_size=10)
             pub.publish(new_order)
-            print('A pizza order is placed')
+            #print('A pizza order is placed')
 
         self.new_window.Table1_button.clicked.connect(publish_order)
         self.new_window.Table2_button.clicked.connect(publish_order)
