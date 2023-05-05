@@ -29,9 +29,7 @@ def waiter_control_node():
     rospy.Subscriber('order_topic', Order, order_callback)
     rospy.spin()
 
-def chef_control(order):
-    # to use the image detection
-    # then check the location and if it matches the table in the order, we make delivered = true 
+def chef_control(order)
     Chef_Location = 1 #maybe we can have the location as coordinates in another msg file.
     Table_Location = 2
     Home_location = 3
