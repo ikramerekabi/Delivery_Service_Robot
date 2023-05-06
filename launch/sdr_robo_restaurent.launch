@@ -1,0 +1,24 @@
+<launch>
+  <!-- Set TURTLEBOT3_MODEL environment variable -->
+  <env name="TURTLEBOT3_MODEL" value="burger"/>
+  <group ns="turtlebot3_gazebo">
+    <include file="$(find turtlebot3_gazebo)/launch/turtlebot3_house.launch"/>
+  </group>
+
+  <!-- Add a delay before starting the RViz -->
+  <node pkg="ros" type="sleep" name="sleep_node" args="15"/>
+
+  <group ns="turtlebot3_navigation">
+    <include file="$(find turtlebot3_navigation)/launch/turtlebot3_navigation.launch">
+      <arg name="map_file" value="$(env HOME)/map.yaml"/>
+    </include>
+  </group>
+
+  <group ns="sdr_robo_restaurent_tablesUI">
+    <node pkg="sdr_robo_restaurent" type="tablesUI.py" name="tablesUI" output="screen"/>
+  </group>
+
+  <group ns="sdr_robo_restaurent_autonomousDriving">
+    <node pkg="sdr_robo_restaurent" type="autonomousDriving.py" name="autonomousDriving" output="screen"/>
+  </group>
+</launch>
