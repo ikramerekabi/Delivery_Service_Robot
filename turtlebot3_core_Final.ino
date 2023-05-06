@@ -45,16 +45,10 @@ void setup()
   
   nh.loginfo("RagTag LED Loader and Unloader Sensor");
   nh.advertise(ledsensor);
-  nh.loginfo("RagTag RFID Payment Sensor");
-  nh.advertise(payment); 
 
   //LED Sensor
   pinMode(13, OUTPUT);   // setting the pin modes, the "13" stands for the internal Arduino uno internal LED  
   pinMode(ProxSensor,INPUT); // then we have the out pin from the module
-
-  //RFID
-  mfrc522.PCD_Init();   // Initiate MFRC522
-
 
   tf_broadcaster.init(nh);
 
@@ -187,43 +181,6 @@ void loop()
         str_loadermsg.data = "1";
         ledsensor.publish( &str_loadermsg );
        }
-      
-      //RFID
-      checkRFIDSignal();
-  }
-}
-
-void checkRFIDSignal(){ 
-  
-  // Look for new cards
-  if ( ! mfrc522.PICC_IsNewCardPresent()) 
-  {
-    return;
-  }
-
-  // Select one of the cards
-  if ( ! mfrc522.PICC_ReadCardSerial()) 
-  {
-    return;
-  }
-
-  String content= "";
-  byte letter;
-  for (byte i = 0; i < mfrc522.uid.size; i++) 
-  { 
-     content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
-     content.concat(String(mfrc522.uid.uidByte[i], HEX));
-  } 
-
-  content.toUpperCase();
-  if (content.substring(1) == "03 BE C3 E9" || content.substring(1) == "45 A6 3B D9") //change here the UID of the card/cards that you want to give access
-  {
-     str_msgpayment.data = "1";
-    payment.publish( &str_msgpayment ); 
-  }  
-  else {
-     str_msgpayment.data = "0";
-    payment.publish( &str_msgpayment );    
   }
 }
 

@@ -39,10 +39,7 @@
 #include <TurtleBot3.h>
 #include "turtlebot3_burger.h"
 
-#include <math.h>
-
-#include <SPI.h>
-#include <MFRC522.h>
+#include <math.h> 
  
 #define SS_PIN 10
 #define RST_PIN 9
@@ -191,10 +188,7 @@ ros::Publisher mag_pub("magnetic_field", &mag_msg);
 //Loader Unloader
 std_msgs::String str_loadermsg; 
 ros::Publisher ledsensor("ledsensor", &str_loadermsg);
-
-//Payment
-std_msgs::String str_msgpayment; 
-ros::Publisher payment("payment", &str_msgpayment);
+ 
 
 /*******************************************************************************
 * Custom
@@ -202,10 +196,6 @@ ros::Publisher payment("payment", &str_msgpayment);
 long previousMillis = 0; 
 long interval = 1500;  
 int tftrefresh = 0;
-
-//FOR RFID
-MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance. 
-
 
 /*******************************************************************************
 * Transform Broadcaster
