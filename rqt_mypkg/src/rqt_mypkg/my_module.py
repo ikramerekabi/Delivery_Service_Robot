@@ -2,7 +2,7 @@
 import os
 import rospy
 import rospkg
-
+from std_msgs.msg import String
 from qt_gui.plugin import Plugin
 from python_qt_binding import loadUi
 from python_qt_binding.QtWidgets import QWidget
@@ -48,6 +48,13 @@ class MyPlugin(Plugin):
         context.add_widget(self._widget)
         self._widget.Burger_button.clicked.connect(self.burger_order) 
         self._widget.Pizza_button.clicked.connect(self.pizza_order) 
+        #self._widget.Stop_Button.clicked.connect(self.function2) 
+        #self._widget.Order_button.clicked.connect(self.open_new_window)
+        #self._widget.Table1_button.clicked.connect(self.waiting_function)
+
+
+
+    #def open_new_window(self):
         
 
 
@@ -73,21 +80,34 @@ class MyPlugin(Plugin):
             pub = rospy.Publisher('order_topic', Order, queue_size=10)
             pub.publish(new_order)
             print('A burger order is placed')
+            self.new_window.close()
 
         self.new_window.Table1_button.clicked.connect(publish_order)
         self.new_window.Table2_button.clicked.connect(publish_order)
         self.new_window.Table3_button.clicked.connect(publish_order)
-       
-            
+        rospy.Subscriber('delivered_signal', String, delivered_signal_callback )
+        #new_order.table_number=2
+        #new_order.table_number=3
+        #pub = rospy.Publisher('order_topic', Order, queue_size=10)
+        #pub.publish(new_order)
+        #print('A burger order is placed')
+        
+        
+        
 
+
+            
+    def delivered_signal_callback(self):
+        self.new_window = loadUi(os.path.join(rospkg.RosPack().get_path('rqt_mypkg'), 'resource', 'delivered.ui'))
+        self.new_window.show()
     def pizza_order(self):
         global new_order
         #new_order = Order()
         self.new_window = loadUi(os.path.join(rospkg.RosPack().get_path('rqt_mypkg'), 'resource', 'Tables.ui'))
         self.new_window.show()
-        self.new_window.Table1_button.clicked.connect(lambda: setattr(new_order, "table_number", 1))
-        self.new_window.Table2_button.clicked.connect(lambda: setattr(new_order, "table_number", 2))
-        self.new_window.Table3_button.clicked.connect(lambda: setattr(new_order, "table_number", 3))
+        self.new_window.Table1_button.clicked.connect(lambda: setattr(new_order, "table_number", "table1"))
+        self.new_window.Table2_button.clicked.connect(lambda: setattr(new_order, "table_number", "table2"))
+        self.new_window.Table3_button.clicked.connect(lambda: setattr(new_order, "table_number", "table3"))
         new_order.order_type = "Pizza"
         new_order.placed= "False"
         new_order.ready="False"
@@ -96,12 +116,15 @@ class MyPlugin(Plugin):
         def publish_order():
             pub = rospy.Publisher('order_topic', Order, queue_size=10)
             pub.publish(new_order)
-            #print('A pizza order is placed')
+            print('A pizza order is placed')
+            self.new_window.close()
 
         self.new_window.Table1_button.clicked.connect(publish_order)
         self.new_window.Table2_button.clicked.connect(publish_order)
         self.new_window.Table3_button.clicked.connect(publish_order)
+        rospy.Subscriber('delivered_signal', String,delivered_signal_callback )
         
+   
 
     def shutdown_plugin(self):
         # TODO unregister all publishers here
