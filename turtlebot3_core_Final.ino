@@ -177,10 +177,10 @@ void loop()
 
       //LED Sensor       
       if(digitalRead(ProxSensor)!=HIGH)      //Check the sensor output if it's high
-       {                
+      {                
         str_loadermsg.data = "1";
         ledsensor.publish( &str_loadermsg );
-       }
+      }
   }
 }
 
