@@ -22,73 +22,60 @@
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance. 
 
 ros::NodeHandle  nh;
-std_msgs::String str_msg; 
-std_msgs::String str_msgchatter; 
-char paid[1] = "0";
-char hello[13] = "Hello";
-ros::Publisher payment("payment", &str_msg);
-ros::Publisher chatter("chatter", &str_msgchatter); 
+std_msgs::String str_msg;  
+char paid[1] = "0"; 
+ros::Publisher payment("payment", &str_msg); 
 
 void setup() 
 { 
+ Serial.begin(57600);   // Initiate a serial communication  
+  
  nh.initNode();
- nh.loginfo("RagTag RFID Payments");
-
+ nh.loginfo("RagTag RFID Payments");  
+ 
   //MY RFID SETUP
-  Serial.begin(57600);   // Initiate a serial communication
   SPI.begin();      // Initiate  SPI bus
-  mfrc522.PCD_Init();   // Initiate MFRC522
-  Serial.println("Approximate your card to the reader...");
-  Serial.println();
-  nh.advertise(payment);
-  nh.advertise(chatter);
-
-
+  mfrc522.PCD_Init();   // Initiate MFRC522 
+  nh.advertise(payment); 
 }
 void loop() 
 {
-
-  //RFID
-  // Look for new cards
-  if ( ! mfrc522.PICC_IsNewCardPresent()) 
-  {
-    return;
-  }
-  // Select one of the cards
-  if ( ! mfrc522.PICC_ReadCardSerial()) 
-  {
-    return;
-  }
-  //Show UID on serial monitor
-  Serial.print("UID tag :");
-  String content= "";
-  byte letter;
-  for (byte i = 0; i < mfrc522.uid.size; i++) 
-  {
-     //Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
-     //Serial.print(mfrc522.uid.uidByte[i], HEX);
-     content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
-     content.concat(String(mfrc522.uid.uidByte[i], HEX));
-  }
-  Serial.println();
-  Serial.print("Message : ");
-  content.toUpperCase();
-  if (content.substring(1) == "03 BE C3 E9" || content.substring(1) == "45 A6 3B D9") //change here the UID of the card/cards that you want to give access
-  {
-    paid[1]  = "1";
-    str_msg.data = paid;
-    payment.publish( &str_msg );
-
-    str_msgchatter.data = hello;
-    chatter.publish( &str_msgchatter );    
+  //Card Detected
+  if (mfrc522.PICC_IsNewCardPresent()) {  
+    String content= "";
+    byte letter;
+    
+    // Read from card
+    nh.loginfo("Reading from card...");    
+    bool readInfo = mfrc522.PICC_ReadCardSerial();     
+    for (byte i = 0; i < mfrc522.uid.size; i++) 
+    {        
+       content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
+       content.concat(String(mfrc522.uid.uidByte[i], HEX));
+    }
+    content.toUpperCase(); 
+    
+    //If ID was read from card then subscribe to service
+    if (readInfo) {
+      if (content.substring(1) == "03 BE C3 E9" || content.substring(1) == "45 A6 3B D9") 
+      {
+       // paid[1]  = "1";
+        str_msg.data = "1";
+        payment.publish( &str_msg );
+  
+        nh.loginfo("Authorized access");  
+      }
+      else 
+      {
+       // paid[1]  = "0";
+        str_msg.data = "0";
+        payment.publish( &str_msg );    
  
-    Serial.println("Authorized access");
-    Serial.println();
-    delay(3000);
+        nh.loginfo("Access denied for ");  
+      }
+    }
   }
- 
- else   {
-    Serial.println(" Access denied");
-    delay(3000);
-  }
+  
+  delay(1500);
+  nh.spinOnce();  
 } 
