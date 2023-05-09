@@ -6,11 +6,22 @@ import time
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from tf.transformations import quaternion_from_euler
 import actionlib
+from threading import Thread
+from nav_msgs.msg import Odometry
+import math
+
+
 
 #, Array_Order
 label ="no detections"
 global current_order
 current_order= Order
+order_exists = False
+current_destination = "home"
+current_tableServing = 0
+current_destination_entity = "home"
+made_it_to_goal = False
+robot_Stopped = True
 order_array = []
 global client
 global led_flag
@@ -54,71 +65,80 @@ def waiter_control_node():
 
 def chef_control(order):
     print("entered the chef control \n")
-    global current_order 
+    global current_order, order_exists, label, moving, led_flag, current_destination, current_tableServing, current_destination_entity
     current_order= order
-    global label
-    global moving 
-    global led_flag
+    order_exists = True 
+
     if(current_order.order_type=="Burger"):
         Chef_Location = "chef1"
     elif(current_order.order_type =="Pizza"):
         Chef_Location = "chef2"
 
+    current_destination = Chef_Location
+    current_tableServing = order.table_number
+    current_destination_entity = "chef"
     move_to_location(Chef_Location, order.table_number)
     # to use the image detection
     # then check the location and if it matches the table in the order, we make delivered = true 
     #Chef_Location = 1 #maybe we can have the location as coordinates in another msg file.
     #Table_Location = 2
-    #Home_location = 3
-    # if order.placed == True:
-    #         #print("calling the callback")
-    #         rospy.Subscriber('labels', String, label_callback)
-    #         print("the label we got from the camera is:", label)
-    #         if (label =='stop'):
-    #              order.ready= True
-    #         else:
-    #              order.ready = False
+    #Home_location = 3 
+    robot_Stopped = False
+
     print("came back to the function")
-    if(current_order.placed == True):
-        print("checked if the order is placed")
-        rospy.Subscriber('labels', String, label_callback)
-    if(current_order.ready==True):
-        rospy.Subscriber('ledsensor', String, ledsensor_callback)
-        if(led_flag==1):
-            current_order.loaded=True
-            move_to_location(order.table_number, order.table_number)
-            rospy.Subscriber('ledsensor', String, ledsensor_callback)
-            if(led_flag ==1):
-                order.delivered=True
-                rospy.Subscriber('payment', String, payment_callback)
-                order.paid=True
-                rospy.Publisher('delivered_signal', String, queue_size=10)
-    if order.delivered==True and order.paid ==True:        
-            move_to_location('home', 'None')
-    print("finished")
+    t1 = Thread(target=LoaderInitialize)
+    t1.start() 
+
+    t2 = Thread(target=PaymentInitialize)
+    t2.start() 
+    
+    t3 = Thread(target=ReadLabels)
+    t3.start()      
+
+    t4 = Thread(target=CheckPosition)
+    t4.start()      
+    rospy.sleep(0.1)
+    rospy.spin()
+
+def LoaderInitialize():
+    rospy.Subscriber('ledsensor', String, ledsensor_callback)
+
+def PaymentInitialize():
+    rospy.Subscriber('payment', String, payment_callback)
+
+def ReadLabels():
+    rospy.Subscriber('labels', String, label_callback)
+
+def PositionSubscription():
+    rospy.Subscriber("/odom", Odometry, position_callback)
+
+def position_callback(msg):
+    global last_goal, made_it_to_goal
+    made_it_to_goal = CheckPosition(last_goal, msg.pose.pose)
+    if made_it_to_goal:         
+        print("Made it to the Goal \n")
+
+ 
+def CheckPosition(pose1, pose2): 
+    if math.sqrt((pose1.x - pose2.x)**2+(pose1.y - pose2.y)**2) < .5:
+        return True
+
+    return False
    
 def payment_callback(data):
     payment_done = True
     
-            #wait for some time for the light to turn green and then move the robot to the chef s location
-            # move_robot(order, Chef_Location) 
-            #use the image detection 
-            #then once the light is green,we make the order ready = true
-            #order.ready =True
-            #then we move the robot to the location of the table in the order which should be related  
-            #move_robot(order, Table_Location) 
-            #once it is there we make the order.delivered = True
-            #order.delivered = True
-            #then once it is delivered, we should send it home
-            #move_robot(order, Home_location)
+    if data.data == "1":
+        move_to_location("home",0)
 
 
 def move_to_location(location_name, tableServing):
-    global client
+    global client, last_goal
     #global robotEvents
     global moving
     global last_goal
     global last_goal_name
+    made_it_to_goal = False
 
     goal = MoveBaseGoal()
     goal.target_pose.header.frame_id = "map"  # Assuming the map frame is "map"
@@ -149,55 +169,63 @@ def move_to_location(location_name, tableServing):
 
 def label_callback(data):
     print("entered the label callback \n")
-    global current_order
-    global label
-    global moving
-    #  #if (data=="red"):
-    #  #print("entered the callback")
-    #  #print("the data of the label is \t", data.data[:4])
-    #  label = data.data[:4]
-    #   #& str(label)!= 'caution'):
-     
+    global current_order, order_exists, label, moving, current_order, current_tableServing, current_destination, made_it_to_goal, current_destination_entity
+ 
     if data.data == 'green_light':
         label = 'green'
+        move_to_location(current_destination, current_tableServing)
     elif data.data == 'red_light':
         label = 'red'
+        StopMoving() 
+    elif moving == False and data.data == 'B':
+        made_it_to_goal = True
+        print("Made it to the Goal \n")
+
     else:
         label = 'no detection'
 
     print("The label we got from the camera is:", label)
-    if label == 'red' and moving == True:
-        client.cancel_all_goals()
-        moving = False
-    elif label=='green' and moving == False:
+
+    #If Stopped and See Green Label - Continue to destination
+    #If At Chef's location and get green label - order is ready go to table   
+    determine_Next_Destination()  
+         
+def StopMoving():
+    global robot_Stopped, moving
+    robot_Stopped = True
+    moving = False
+
+    client.cancel_all_goals()
+
+def determine_Next_Destination():
+  global current_order, label, moving, current_order, current_tableServing, current_destination, made_it_to_goal, current_destination_entity
+
+  if made_it_to_goal and current_destination_entity == "chef":
+        current_destination = "table1"
+        current_tableServing = current_order.table_number
+        current_destination_entity = "table"
         current_order.ready = True  
+
         print("the order is ready now \n")
-    print("the current_order is ", current_order.ready)
-    
-    #print("the value of the label from the callback function is:", label)
+        print("the current_order is ", current_order.ready)
+        move_to_location(current_destination, current_tableServing)
+  elif made_it_to_goal and current_destination_entity == "table":
+        move_to_location("home", 0)
 
+        print("the order is delivered\n")
+  else:
+        move_to_location(current_destination, current_tableServing)
+        print("Continuing to destination\n")    
 
-    #  if(str(label) !='stop' and str(label)!= 'caut'):
-    #     print("label is not equal to stop, label is:", label)
-    #     label ="no detection"
-    #  #if(str(label)!= 'red'):
-    #   #  print("label is not equal to red, label is:", label)
-    #   #  label ="no detection"
-    # #  rospy.loginfo("the array has:\n")
-    # #  for order in order_array:
-    # #     print("The table number is: ", order.table_number,"\n")
-    # #     print("The order type is: ", order.order_type,"\n")
-    # #     print("The order is placed: ", order.placed,"\n")
-    # #     print("The order is ready: ", order.ready,"\n")
-    # #     print("The table is delivered: ", order.delivered, "\n")
-       
 def ledsensor_callback(data):
     global led_flag
+    global current_order, label, moving, current_order, current_tableServing, current_destination, made_it_to_goal, current_destination_entity
+
     led_flag= data.data
-#def move_robot(order, location):
-    
-#     #this moves the robot to the location given 
-#     print("arrived to the location given")
+    if moving == False:        
+        determine_Next_Destination()
+    else:
+        StopMoving()         
      
      
 if __name__ == '__main__':
