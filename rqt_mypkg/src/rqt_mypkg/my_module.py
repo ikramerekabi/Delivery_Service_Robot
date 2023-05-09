@@ -68,6 +68,7 @@ class MyPlugin(Plugin):
         #new_order = Order()
         self.new_window = loadUi(os.path.join(rospkg.RosPack().get_path('rqt_mypkg'), 'resource', 'Tables.ui'))
         self.new_window.show()
+        rospy.Subscriber('delivered_signal', String, self.delivered_signal_callback)
         self.new_window.Table1_button.clicked.connect(lambda: setattr(new_order, "table_number", "table1"))
         self.new_window.Table2_button.clicked.connect(lambda: setattr(new_order, "table_number", "table2"))
         self.new_window.Table3_button.clicked.connect(lambda: setattr(new_order, "table_number", "table3"))
@@ -85,7 +86,7 @@ class MyPlugin(Plugin):
         self.new_window.Table1_button.clicked.connect(publish_order)
         self.new_window.Table2_button.clicked.connect(publish_order)
         self.new_window.Table3_button.clicked.connect(publish_order)
-        #rospy.Subscriber('delivered_signal', String, delivered_signal_callback )
+        rospy.Subscriber('delivered_signal', String, self.delivered_signal_callback)
         #new_order.table_number=2
         #new_order.table_number=3
         #pub = rospy.Publisher('order_topic', Order, queue_size=10)
@@ -97,7 +98,7 @@ class MyPlugin(Plugin):
 
 
             
-    def delivered_signal_callback(self):
+    def delivered_signal_callback(self, data):
         self.new_window = loadUi(os.path.join(rospkg.RosPack().get_path('rqt_mypkg'), 'resource', 'delivered.ui'))
         self.new_window.show()
 
@@ -123,6 +124,7 @@ class MyPlugin(Plugin):
         self.new_window.Table1_button.clicked.connect(publish_order)
         self.new_window.Table2_button.clicked.connect(publish_order)
         self.new_window.Table3_button.clicked.connect(publish_order)
+        rospy.Subscriber('delivered_signal', String, self.delivered_signal_callback)
         #self.rospy.Subscriber('delivered_signal', String, delivered_signal_callback)
         
    

@@ -4,5 +4,6 @@ string placed
 string ready 
 string loaded
 string delivered
+string unloaded
 string paid
 
