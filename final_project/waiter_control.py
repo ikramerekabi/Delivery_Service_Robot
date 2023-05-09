@@ -9,6 +9,8 @@ import actionlib
 
 #, Array_Order
 label ="no detections"
+global current_order
+current_order= Order
 order_array = []
 global client
 global led_flag
@@ -30,11 +32,13 @@ locations = {
 }
 
 def order_callback(data):
+    global current_order
+    current_order = data
     #rospy.loginfo("the order table is:\t")
     rospy.loginfo(' The order has been placed for table %s and the order type is %s', data.table_number, data.order_type)
     data.placed = True
     order_array.append(data)
-    chef_control(data)
+    chef_control(current_order)
     #rospy.loginfo("the order table is:\t %s", data.table_number,"and the order type is:\t %s", data.order_type)
     rospy.loginfo("the array has:\n")
     for order in order_array:
@@ -46,17 +50,18 @@ def order_callback(data):
 
 def waiter_control_node():
     rospy.Subscriber('order_topic', Order, order_callback)
-    rospy.spin()
 
-   
 
 def chef_control(order):
+    print("entered the chef control \n")
+    global current_order 
+    current_order= order
     global label
     global moving 
     global led_flag
-    if(order.order_type=="Burger"):
+    if(current_order.order_type=="Burger"):
         Chef_Location = "chef1"
-    elif(order.order_type =="Pizza"):
+    elif(current_order.order_type =="Pizza"):
         Chef_Location = "chef2"
 
     move_to_location(Chef_Location, order.table_number)
@@ -73,18 +78,14 @@ def chef_control(order):
     #              order.ready= True
     #         else:
     #              order.ready = False
-    if(order.placed == True):
+    print("came back to the function")
+    if(current_order.placed == True):
+        print("checked if the order is placed")
         rospy.Subscriber('labels', String, label_callback)
-        print("The label we got from the camera is:", label)
-        if label == 'red' and moving == True:
-            client.cancel_all_goals()
-            moving = False
-        elif label=='green' and moving == False:
-            order.ready = True  
-    if(order.ready==True):
+    if(current_order.ready==True):
         rospy.Subscriber('ledsensor', String, ledsensor_callback)
         if(led_flag==1):
-            order.loaded=True
+            current_order.loaded=True
             move_to_location(order.table_number, order.table_number)
             rospy.Subscriber('ledsensor', String, ledsensor_callback)
             if(led_flag ==1):
@@ -94,7 +95,7 @@ def chef_control(order):
                 rospy.Publisher('delivered_signal', String, queue_size=10)
     if order.delivered==True and order.paid ==True:        
             move_to_location('home', 'None')
-
+    print("finished")
    
 def payment_callback(data):
     payment_done = True
@@ -147,19 +148,32 @@ def move_to_location(location_name, tableServing):
     #robotEvents.publish(eventMessage)
 
 def label_callback(data):
+    print("entered the label callback \n")
+    global current_order
     global label
+    global moving
     #  #if (data=="red"):
     #  #print("entered the callback")
     #  #print("the data of the label is \t", data.data[:4])
     #  label = data.data[:4]
     #   #& str(label)!= 'caution'):
      
-    if data.data[:4] == 'stop':
-        label = 'stop'
-    elif data.data[:4] == 'caut':
-        label = 'caution'
+    if data.data == 'green_light':
+        label = 'green'
+    elif data.data == 'red_light':
+        label = 'red'
     else:
         label = 'no detection'
+
+    print("The label we got from the camera is:", label)
+    if label == 'red' and moving == True:
+        client.cancel_all_goals()
+        moving = False
+    elif label=='green' and moving == False:
+        current_order.ready = True  
+        print("the order is ready now \n")
+    print("the current_order is ", current_order.ready)
+    
     #print("the value of the label from the callback function is:", label)
 
 
@@ -191,7 +205,9 @@ if __name__ == '__main__':
     client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
     rospy.loginfo("Waiting for move_base action server...")
     client.wait_for_server()
+    print("finished waiting")
     waiter_control_node()
+    
     #print("the final array of orders has:")
     rospy.spin()
    

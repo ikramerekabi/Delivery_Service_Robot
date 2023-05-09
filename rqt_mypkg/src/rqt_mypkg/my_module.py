@@ -68,9 +68,9 @@ class MyPlugin(Plugin):
         #new_order = Order()
         self.new_window = loadUi(os.path.join(rospkg.RosPack().get_path('rqt_mypkg'), 'resource', 'Tables.ui'))
         self.new_window.show()
-        self.new_window.Table1_button.clicked.connect(lambda: setattr(new_order, "table_number", 1))
-        self.new_window.Table2_button.clicked.connect(lambda: setattr(new_order, "table_number", 2))
-        self.new_window.Table3_button.clicked.connect(lambda: setattr(new_order, "table_number", 3))
+        self.new_window.Table1_button.clicked.connect(lambda: setattr(new_order, "table_number", "table1"))
+        self.new_window.Table2_button.clicked.connect(lambda: setattr(new_order, "table_number", "table2"))
+        self.new_window.Table3_button.clicked.connect(lambda: setattr(new_order, "table_number", "table3"))
         new_order.order_type = "Burger"
         new_order.placed= "False"
         new_order.ready="False"
@@ -85,7 +85,7 @@ class MyPlugin(Plugin):
         self.new_window.Table1_button.clicked.connect(publish_order)
         self.new_window.Table2_button.clicked.connect(publish_order)
         self.new_window.Table3_button.clicked.connect(publish_order)
-        rospy.Subscriber('delivered_signal', String, delivered_signal_callback )
+        #rospy.Subscriber('delivered_signal', String, delivered_signal_callback )
         #new_order.table_number=2
         #new_order.table_number=3
         #pub = rospy.Publisher('order_topic', Order, queue_size=10)
@@ -100,6 +100,7 @@ class MyPlugin(Plugin):
     def delivered_signal_callback(self):
         self.new_window = loadUi(os.path.join(rospkg.RosPack().get_path('rqt_mypkg'), 'resource', 'delivered.ui'))
         self.new_window.show()
+
     def pizza_order(self):
         global new_order
         #new_order = Order()
@@ -122,7 +123,7 @@ class MyPlugin(Plugin):
         self.new_window.Table1_button.clicked.connect(publish_order)
         self.new_window.Table2_button.clicked.connect(publish_order)
         self.new_window.Table3_button.clicked.connect(publish_order)
-        rospy.Subscriber('delivered_signal', String,delivered_signal_callback )
+        #self.rospy.Subscriber('delivered_signal', String, delivered_signal_callback)
         
    
 

@@ -53,6 +53,7 @@ find_package(catkin REQUIRED COMPONENTS
    FILES
    Array_Order.msg
    Order.msg
+   tableMenuSelection.msg
  )
 
 ## Generate services in the 'srv' folder

@@ -1,0 +1,12 @@
+ssh to the turtlebot 
+on the turtlebot:
+roslaunch turtlebot3_bringup turtlebot3_robot.launch
+on the laptop:
+To run the navigation
+roslaunch turtlebot3_navigation turtlebot3_navigation.launch map_file:=$HOME/map.yaml
+To run the rqt interface:
+rosrun rqt_mypkg rqt_mypkg
+To run the control node:
+rosrun final_project waiter_control.py 
+We need to run the detect.py file for the image detection:
+python3 yolov5-master/detect.py --weights yolov5-master/weights/best.pt --source 0
