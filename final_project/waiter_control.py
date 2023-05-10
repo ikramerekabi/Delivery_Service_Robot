@@ -57,14 +57,15 @@ def order_callback(data):
         print("The order type is: ", order.order_type,"\n")
         print("The order is placed: ", order.placed,"\n")
         print("The order is ready: ", order.ready,"\n")
-        print("The table is delivered: ", order.delivered, "\n")
-
+        print("The order is loaded: ", order.loaded, "\n")
+        print("The order is delivered: ", order.delivered, "\n")
+        print("The order is unloaded: ", order.unloaded, "\n")
+        print("The order is paid: ", order.paid, "\n")
 def waiter_control_node():
     rospy.Subscriber('order_topic', Order, order_callback)
 
 
 def chef_control(order):
-    print("entered the chef control \n")
     global current_order, order_exists, label, moving, led_flag, current_destination, current_tableServing, current_destination_entity
     current_order= order
     order_exists = True 
@@ -120,10 +121,19 @@ def position_callback(msg):
     return False
    
 def payment_callback(data):
+    global current_order, current_tableServing, current_destination, made_it_to_goal, current_destination_entity
     payment_done = True
-    
+    current_order.paid =True
     if data.data == "1":
+        current_tableServing = 0
+        current_destination = "home"
+        current_destination_entity = "home"
+        print("the order is delivered and your payment is aproved\n")
+        current_order.delivered =True
+        pub_feedback= rospy.Publisher('delivered_signal', String, queue_size=10)
+        pub_feedback.publish('Brain')
         move_to_location("home",0)
+
 
 
 def move_to_location(location_name, tableServing):
@@ -164,7 +174,6 @@ def move_to_location(location_name, tableServing):
 def label_callback(data):
     global green_light
     if green_light==False:
-        print("entered the label callback \n")
         global current_order, order_exists, label, moving, current_order, current_tableServing, current_destination, made_it_to_goal, current_destination_entity
     
         if data.data == 'green_light' :
@@ -184,12 +193,11 @@ def label_callback(data):
             StopMoving()
         elif moving == False and data.data == 'B':
             made_it_to_goal = True
-            #print("Made it to the Goal \n")
-
+        
         else:
             label = 'no detection'
 
-        #print("The label we got from the camera is:", label)
+       
 
         #If Stopped and See Green Label - Continue to destination
         #If At Chef's location and get green label - order is ready go to table   
@@ -213,9 +221,9 @@ def determine_Next_Destination():
         current_order.ready = True  
         print("the order is ready now \n")
         move_to_location(current_destination, current_tableServing)
-  elif made_it_to_goal and current_destination_entity == "table" and current_order.unloaded==True:
+  elif made_it_to_goal and current_destination_entity == "table" and current_order.unloaded==True and payment_done==True:
         move_to_location("home", 0)
-        print("the order is delivered\n")
+        print("the order is delivered and your payment is aproved\n")
         current_order.delivered =True
         pub_feedback= rospy.Publisher('delivered_signal', String, queue_size=10)
         pub_feedback.publish('Brain')
@@ -232,7 +240,6 @@ def ledsensor_callback(data):
     led_flag= data.data
     current_order.loaded=True
     if(led_flag):
-        print("it is loaded")
         if(current_destination_entity=="table" and moving==False ):
             current_order.unloaded=True
             determine_Next_Destination()
@@ -247,11 +254,9 @@ def ledsensor_callback(data):
 if __name__ == '__main__':
     
     rospy.init_node('waiter_control_node', anonymous=True)
-    
     client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
     rospy.loginfo("Waiting for move_base action server...")
     client.wait_for_server()
-    print("finished waiting")
     waiter_control_node()
     
     rospy.spin()
