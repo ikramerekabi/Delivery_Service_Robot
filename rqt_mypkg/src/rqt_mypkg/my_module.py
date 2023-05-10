@@ -51,7 +51,7 @@ class MyPlugin(Plugin):
         #self._widget.Stop_Button.clicked.connect(self.function2) 
         #self._widget.Order_button.clicked.connect(self.open_new_window)
         #self._widget.Table1_button.clicked.connect(self.waiting_function)
-
+        rospy.Subscriber('delivered_signal', String, self.delivered_signal_callback)
 
 
     #def open_new_window(self):
@@ -86,7 +86,7 @@ class MyPlugin(Plugin):
         self.new_window.Table1_button.clicked.connect(publish_order)
         self.new_window.Table2_button.clicked.connect(publish_order)
         self.new_window.Table3_button.clicked.connect(publish_order)
-        rospy.Subscriber('delivered_signal', String, self.delivered_signal_callback)
+        
         #new_order.table_number=2
         #new_order.table_number=3
         #pub = rospy.Publisher('order_topic', Order, queue_size=10)
@@ -99,6 +99,7 @@ class MyPlugin(Plugin):
 
             
     def delivered_signal_callback(self, data):
+        print("HIIIII")
         self.new_window = loadUi(os.path.join(rospkg.RosPack().get_path('rqt_mypkg'), 'resource', 'delivered.ui'))
         self.new_window.show()
 

@@ -217,6 +217,9 @@ def determine_Next_Destination():
         move_to_location("home", 0)
         print("the order is delivered\n")
         current_order.delivered =True
+        pub_feedback= rospy.Publisher('delivered_signal', String, queue_size=10)
+        pub_feedback.publish('Brain')
+        
   else:
         move_to_location(current_destination, current_tableServing)
         print("Continuing to destination\n")   
@@ -244,11 +247,13 @@ def ledsensor_callback(data):
 if __name__ == '__main__':
     
     rospy.init_node('waiter_control_node', anonymous=True)
+    
     client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
     rospy.loginfo("Waiting for move_base action server...")
     client.wait_for_server()
     print("finished waiting")
     waiter_control_node()
+    
     rospy.spin()
    
 
